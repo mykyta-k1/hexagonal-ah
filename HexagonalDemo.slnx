@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="HexagonalDemo.Application/HexagonalDemo.Application.csproj" />
+  <Project Path="HexagonalDemo.Domain/HexagonalDemo.Domain.csproj" />
+  <Project Path="HexagonalDemo.Infrastructure/HexagonalDemo.Infrastructure.csproj" />
+  <Project Path="HexagonalDemo.Presentation/HexagonalDemo.Presentation.csproj" />
+</Solution>
