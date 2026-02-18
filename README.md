@@ -67,3 +67,76 @@ dotnet run --project HexagonalDemo.Presentation
 - **Адаптер (Adapter)**: Конкретна реалізація порту. Наприклад, `SqlRepository` — це адаптер для `IRepository`.
 
 Цей підхід дозволяє легко змінювати інфраструктуру (наприклад, замінити SQL Server на MongoDB) без змін у бізнес-логіці.
+
+## Реалізація CQRS з MediatR
+
+У проєкті використано патерн **CQRS** (Command Query Responsibility Segregation) — розділення відповідальності команд і запитів.
+
+### Що таке MediatR?
+**MediatR** — це бібліотека, яка реалізує патерн "Посередник" (Mediator). Вона дозволяє зменшити зв'язність між компонентами програми. Замість того, щоб контролер напряму викликав сервіс, він надсилає "повідомлення" (Команду або Запит) через Медіатор. А Медіатор вже знає, який клас (Handler) має обробити це повідомлення.
+
+### Структура команд і запитів
+Логіка розділена на два типи операцій:
+
+1. **Команди (Commands)**: Змінюють стан системи (Create, Update, Delete).
+   - Приклад: `CreateProductCommand` — містить дані для створення.
+   - Обробник: `CreateProductCommandHandler` — виконує логіку створення.
+
+2. **Запити (Queries)**: Тільки читають дані, нічого не змінюють (Get, Search).
+   - Приклад: `GetAllProductsQuery`.
+   - Обробник: `GetAllProductsQueryHandler` — повертає дані.
+
+Це дозволяє оптимізувати читання та запис окремо, а також робить код чистішим і зрозумілішим.
+
+## Як запустити проєкт
+
+Найпростіший спосіб - використати `Makefile`:
+
+```bash
+make run
+```
+Або стандартними засобами .NET:
+```bash
+cd HexagonalDemo.Presentation
+dotnet run
+```
+
+Проєкт запуститься за адресою: `https://localhost:5001` (або `http://localhost:5000`).
+
+### Налаштування запуску (launchSettings.json)
+
+Файл `Properties/launchSettings.json` використовується для налаштування параметрів запуску під час розробки (Development):
+- **applicationUrl**: Визначає порти (наприклад, 5000 і 5001).
+- **environmentVariables**: Встановлює змінні середовища, наприклад `ASPNETCORE_ENVIRONMENT=Development`.
+- **profiles**: Профілі запуску (IIS Express, Project тощо).
+
+Цей файл використовується лише командою `dotnet run` або Visual Studio/Rider. При публікації (`dotnet publish`) ці налаштування ігноруються.
+
+## Документація API (Swagger)
+
+Після запуску проєкту, перейдіть за посиланням, щоб побачити автоматично згенеровану документацію методів:
+👉 **[Swagger UI](https://localhost:5001/swagger)**
+
+Там ви зможете протестувати всі методи (GET, POST, DELETE) прямо з браузера.
+
+## Dependency Injection (DI)
+
+У проєкті використано вбудований DI-контейнер ASP.NET Core (`Microsoft.Extensions.DependencyInjection`).
+Він відповідає за створення об'єктів та передачу їх залежностей.
+
+Реєстрація відбувається у [Program.cs](HexagonalDemo.Presentation/Program.cs):
+
+1. **Singleton**: `AddSingleton<IProductRepository, InMemoryProductRepository>()`
+   - Створюється **один раз** на весь час життя програми.
+   - Використано для `InMemoryProductRepository`, щоб дані не зникали між різними HTTP-запитами.
+
+2. **Scoped**: `AddScoped<IProductService, ProductService>()`
+   - Створюється **новий для кожного HTTP-запиту**.
+   - Це стандартний час життя для сервісів бізнес-логіки.
+
+3. **HttpClient**: `AddHttpClient<IProductProxy, FakeStoreProductProxy>()`
+   - Спеціальна реєстрація для сервісів, що роблять HTTP-запити. Вона ефективно керує підключеннями.
+
+4. **MediatR**: `AddMediatR(...)`
+   - Автоматично сканує збірку і реєструє всі знайдені `IRequestHandler` як Scoped сервіси.
+

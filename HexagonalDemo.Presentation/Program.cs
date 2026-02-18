@@ -1,7 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-// using HexagonalDemo.Infrastructure.Persistence; // Простір імен (placeholder)
-// using HexagonalDemo.Application.UseCases; // Простір імен (placeholder)
+using HexagonalDemo.Infrastructure.Adapters;
+using HexagonalDemo.Application.Ports;
+using HexagonalDemo.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Дізнайтеся більше про налаштування Swagger/OpenAPI: https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+});
 
 // --- НАЛАШТУВАННЯ ЗАЛЕЖНОСТЕЙ ГЕКСАГОНАЛЬНОЇ АРХІТЕКТУРИ ---
 
@@ -25,10 +30,12 @@ builder.Services.AddHttpClient<IProductProxy, FakeStoreProductProxy>(client =>
 });
 
 // 2. Application Services (Use Cases)
-builder.Services.AddScoped<IProductService, ProductService>();
+// Реєстрація MediatR. Ми вказуємо один з типів з проєкту Application (наприклад CreateProductCommand),
+// щоб MediatR міг просканувати всю збірку і знайти всі Handlers.
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<HexagonalDemo.Application.UseCases.Products.Commands.CreateProduct.CreateProductCommand>());
 
-// 3. MediatR (якщо використовується)
-// builder.Services.AddMediatR(...)
+// Можна залишити і пряму реєстрацію сервісів, якщо потрібно
+// builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
 
