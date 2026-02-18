@@ -14,18 +14,21 @@ builder.Services.AddSwaggerGen();
 
 // --- НАЛАШТУВАННЯ ЗАЛЕЖНОСТЕЙ ГЕКСАГОНАЛЬНОЇ АРХІТЕКТУРИ ---
 
-// 1. Додавання MediatR (Шар застосунку - Application Layer)
-// Сканує збірку Application для пошуку обробників (Handlers) та запитів (Requests).
-// builder.Services.AddMediatR(typeof(HexagonalDemo.Application.AssemblyMarker)); 
-// Примітка: Вам потрібно створити клас-маркер або використати будь-який тип з проєкту Application.
-// builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(AppDomain.CurrentDomain.GetAssemblies()));
+// 1. Інфраструктура (Adapters)
+// Реєструємо InMemory репозиторій як Singleton, щоб дані зберігалися між запитами
+builder.Services.AddSingleton<IProductRepository, InMemoryProductRepository>();
 
-// 2. Додавання DbContext (Шар інфраструктури - Infrastructure Layer)
-// builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Реєструємо Proxy з HttpClient
+builder.Services.AddHttpClient<IProductProxy, FakeStoreProductProxy>(client =>
+{
+    client.BaseAddress = new Uri("https://fakestoreapi.com/");
+});
 
-// 3. Реєстрація Портів та Адаптерів (Ports & Adapters)
-// builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+// 2. Application Services (Use Cases)
+builder.Services.AddScoped<IProductService, ProductService>();
+
+// 3. MediatR (якщо використовується)
+// builder.Services.AddMediatR(...)
 
 var app = builder.Build();
 

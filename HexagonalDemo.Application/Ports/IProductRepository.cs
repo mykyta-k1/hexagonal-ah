@@ -23,4 +23,14 @@ public interface IProductRepository
     /// Додати новий продукт.
     /// </summary>
     Task AddAsync(Product product);
+
+    /// <summary>
+    /// Видалити продукт за ID.
+    /// </summary>
+    Task DeleteAsync(int id);
+
+    /// <summary>
+    /// Пошук продуктів за назвою.
+    /// </summary>
+    Task<IEnumerable<Product>> GetByNameAsync(string name);
 }
